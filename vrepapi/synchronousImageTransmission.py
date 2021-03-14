@@ -20,7 +20,6 @@ except:
     print ('--------------------------------------------------------------')
     print ('')
 
-import math
 import time
 
 class Client:
@@ -29,7 +28,7 @@ class Client:
         self.stepCounter=0
         self.lastImageAcquisitionTime=-1
         sim.simxFinish(-1) # just in case, close all opened connections
-        self.id=sim.simxStart('127.0.0.1',19997,True,True,5000,5) # Connect to CoppeliaSim
+        self.id= sim.simxStart('127.0.0.1', 19997, True, True, 5000, 5) # Connect to CoppeliaSim
         return self
     
     def __exit__(self,*err):
@@ -48,42 +47,47 @@ with Client() as client:
                 currentStep=client.stepCounter
                 sim.simxSynchronousTrigger(client.id);
                 while client.stepCounter==currentStep:
-                    retCode,s=sim.simxGetIntegerSignal(client.id,client.intSignalName,sim.simx_opmode_buffer)
-                    if retCode==sim.simx_return_ok:
+                    retCode,s= sim.simxGetIntegerSignal(client.id, client.intSignalName, sim.simx_opmode_buffer)
+                    if retCode== sim.simx_return_ok:
                         client.stepCounter=s
-                retCode,res,img=sim.simxGetVisionSensorImage(client.id,client.visionSensorHandle,0,sim.simx_opmode_buffer)
-                client.lastImageAcquisitionTime=sim.simxGetLastCmdTime(client.id)
-                if retCode==sim.simx_return_ok:
-                   sim.simxSetVisionSensorImage(client.id,client.passiveVisionSensorHandle,img,0,sim.simx_opmode_oneshot)
+                retCode,res,img= sim.simxGetVisionSensorImage(client.id, client.visionSensorHandle, 0,
+                                                              sim.simx_opmode_buffer)
+                client.lastImageAcquisitionTime= sim.simxGetLastCmdTime(client.id)
+                if retCode== sim.simx_return_ok:
+                   sim.simxSetVisionSensorImage(client.id, client.passiveVisionSensorHandle, img, 0,
+                                                sim.simx_opmode_oneshot)
             else:
-                retCode,res,img=sim.simxGetVisionSensorImage(client.id,client.visionSensorHandle,0,sim.simx_opmode_buffer)
-                if retCode==sim.simx_return_ok:
-                    imageSimTime=sim.simxGetLastCmdTime(client.id)
+                retCode,res,img= sim.simxGetVisionSensorImage(client.id, client.visionSensorHandle, 0,
+                                                              sim.simx_opmode_buffer)
+                if retCode== sim.simx_return_ok:
+                    imageSimTime= sim.simxGetLastCmdTime(client.id)
                     if client.lastImageAcquisitionTime!=imageSimTime:
                         client.lastImageAcquisitionTime=imageSimTime
-                        sim.simxSetVisionSensorImage(client.id,client.passiveVisionSensorHandle,img,0,sim.simx_opmode_oneshot)
+                        sim.simxSetVisionSensorImage(client.id, client.passiveVisionSensorHandle, img, 0,
+                                                     sim.simx_opmode_oneshot)
 
         # Start streaming client.intSignalName integer signal, that signals when a step is finished:
-        sim.simxGetIntegerSignal(client.id,client.intSignalName,sim.simx_opmode_streaming)
+        sim.simxGetIntegerSignal(client.id, client.intSignalName, sim.simx_opmode_streaming)
         
-        res,client.visionSensorHandle=sim.simxGetObjectHandle(client.id,'VisionSensor',sim.simx_opmode_blocking)
-        res,client.passiveVisionSensorHandle=sim.simxGetObjectHandle(client.id,'PassiveVisionSensor',sim.simx_opmode_blocking)
+        res,client.visionSensorHandle= sim.simxGetObjectHandle(client.id, 'VisionSensor', sim.simx_opmode_blocking)
+        res,client.passiveVisionSensorHandle= sim.simxGetObjectHandle(client.id, 'PassiveVisionSensor',
+                                                                      sim.simx_opmode_blocking)
         
         # Start streaming the vision sensor image:
-        sim.simxGetVisionSensorImage(client.id,client.visionSensorHandle,0,sim.simx_opmode_streaming)
+        sim.simxGetVisionSensorImage(client.id, client.visionSensorHandle, 0, sim.simx_opmode_streaming)
         
         # enable the synchronous mode on the client:
         if client.runInSynchronousMode:
-            sim.simxSynchronous(client.id,True)
+            sim.simxSynchronous(client.id, True)
 
-        sim.simxStartSimulation(client.id,sim.simx_opmode_oneshot)
+        sim.simxStartSimulation(client.id, sim.simx_opmode_oneshot)
         
         startTime=time.time()
         while time.time()-startTime < 5:
             stepSimulation()
         
         # stop data streaming
-        sim.simxGetIntegerSignal(client.id,client.intSignalName,sim.simx_opmode_discontinue)
-        sim.simxGetVisionSensorImage(client.id,client.visionSensorHandle,0,sim.simx_opmode_discontinue)
+        sim.simxGetIntegerSignal(client.id, client.intSignalName, sim.simx_opmode_discontinue)
+        sim.simxGetVisionSensorImage(client.id, client.visionSensorHandle, 0, sim.simx_opmode_discontinue)
         
-        sim.simxStopSimulation(client.id,sim.simx_opmode_blocking)
+        sim.simxStopSimulation(client.id, sim.simx_opmode_blocking)

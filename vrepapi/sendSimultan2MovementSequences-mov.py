@@ -29,7 +29,7 @@ class Client:
         self.executedMovId1='notReady'
         self.executedMovId2='notReady'
         sim.simxFinish(-1) # just in case, close all opened connections
-        self.id=sim.simxStart('127.0.0.1',19997,True,True,5000,5) # Connect to CoppeliaSim
+        self.id= sim.simxStart('127.0.0.1', 19997, True, True, 5000, 5) # Connect to CoppeliaSim
         return self
     
     def __exit__(self,*err):
@@ -50,23 +50,23 @@ with Client() as client:
 
         def waitForMovementExecuted1(id):
             while client.executedMovId1!=id:
-                retCode,s=sim.simxGetStringSignal(client.id,client.stringSignalName1,sim.simx_opmode_buffer)
-                if retCode==sim.simx_return_ok:
+                retCode,s= sim.simxGetStringSignal(client.id, client.stringSignalName1, sim.simx_opmode_buffer)
+                if retCode== sim.simx_return_ok:
                     if type(s)==bytearray:
                         s=s.decode('ascii') # python2/python3 differences
                     client.executedMovId1=s
 
         def waitForMovementExecuted2(id):
             while client.executedMovId2!=id:
-                retCode,s=sim.simxGetStringSignal(client.id,client.stringSignalName2,sim.simx_opmode_buffer)
-                if retCode==sim.simx_return_ok:
+                retCode,s= sim.simxGetStringSignal(client.id, client.stringSignalName2, sim.simx_opmode_buffer)
+                if retCode== sim.simx_return_ok:
                     if type(s)==bytearray:
                         s=s.decode('ascii') # python2/python3 differences
                     client.executedMovId2=s
 
         # Start streaming client.stringSignalName1 and client.stringSignalName2 string signals:
-        sim.simxGetStringSignal(client.id,client.stringSignalName1,sim.simx_opmode_streaming)
-        sim.simxGetStringSignal(client.id,client.stringSignalName2,sim.simx_opmode_streaming)
+        sim.simxGetStringSignal(client.id, client.stringSignalName1, sim.simx_opmode_streaming)
+        sim.simxGetStringSignal(client.id, client.stringSignalName2, sim.simx_opmode_streaming)
 
         # Set-up some movement variables:
         mVel=100*math.pi/180
@@ -76,7 +76,7 @@ with Client() as client:
         targetVel=[0,0,0,0,0,0]
 
         # Start simulation:
-        sim.simxStartSimulation(client.id,sim.simx_opmode_blocking)
+        sim.simxStartSimulation(client.id, sim.simx_opmode_blocking)
 
         # Wait until ready:
         waitForMovementExecuted1('ready') 
@@ -86,12 +86,16 @@ with Client() as client:
         targetConfig=[90*math.pi/180,90*math.pi/180,-90*math.pi/180,90*math.pi/180,90*math.pi/180,90*math.pi/180]
         movementData={"id":"movSeq1","type":"mov","targetConfig":targetConfig,"targetVel":targetVel,"maxVel":maxVel,"maxAccel":maxAccel}
         packedMovementData=msgpack.packb(movementData)
-        sim.simxCallScriptFunction(client.id,targetArm1,sim.sim_scripttype_childscript,'legacyRapiMovementDataFunction',[],[],[],packedMovementData,sim.simx_opmode_oneshot)
-        sim.simxCallScriptFunction(client.id,targetArm2,sim.sim_scripttype_childscript,'legacyRapiMovementDataFunction',[],[],[],packedMovementData,sim.simx_opmode_oneshot)
+        sim.simxCallScriptFunction(client.id, targetArm1, sim.sim_scripttype_childscript, 'legacyRapiMovementDataFunction', [], [], [], packedMovementData,
+                                   sim.simx_opmode_oneshot)
+        sim.simxCallScriptFunction(client.id, targetArm2, sim.sim_scripttype_childscript, 'legacyRapiMovementDataFunction', [], [], [], packedMovementData,
+                                   sim.simx_opmode_oneshot)
 
         # Execute first movement sequence:
-        sim.simxCallScriptFunction(client.id,targetArm1,sim.sim_scripttype_childscript,'legacyRapiExecuteMovement',[],[],[],'movSeq1',sim.simx_opmode_oneshot)
-        sim.simxCallScriptFunction(client.id,targetArm2,sim.sim_scripttype_childscript,'legacyRapiExecuteMovement',[],[],[],'movSeq1',sim.simx_opmode_oneshot)
+        sim.simxCallScriptFunction(client.id, targetArm1, sim.sim_scripttype_childscript, 'legacyRapiExecuteMovement', [], [], [], 'movSeq1',
+                                   sim.simx_opmode_oneshot)
+        sim.simxCallScriptFunction(client.id, targetArm2, sim.sim_scripttype_childscript, 'legacyRapiExecuteMovement', [], [], [], 'movSeq1',
+                                   sim.simx_opmode_oneshot)
         
         # Wait until above movement sequence finished executing:
         waitForMovementExecuted1('movSeq1') 
@@ -102,28 +106,36 @@ with Client() as client:
         targetVel=[-60*math.pi/180,-20*math.pi/180,0,0,0,0]
         movementData={"id":"movSeq2","type":"mov","targetConfig":targetConfig,"targetVel":targetVel,"maxVel":maxVel,"maxAccel":maxAccel}
         packedMovementData=msgpack.packb(movementData)
-        sim.simxCallScriptFunction(client.id,targetArm1,sim.sim_scripttype_childscript,'legacyRapiMovementDataFunction',[],[],[],packedMovementData,sim.simx_opmode_oneshot)
-        sim.simxCallScriptFunction(client.id,targetArm2,sim.sim_scripttype_childscript,'legacyRapiMovementDataFunction',[],[],[],packedMovementData,sim.simx_opmode_oneshot)
+        sim.simxCallScriptFunction(client.id, targetArm1, sim.sim_scripttype_childscript, 'legacyRapiMovementDataFunction', [], [], [], packedMovementData,
+                                   sim.simx_opmode_oneshot)
+        sim.simxCallScriptFunction(client.id, targetArm2, sim.sim_scripttype_childscript, 'legacyRapiMovementDataFunction', [], [], [], packedMovementData,
+                                   sim.simx_opmode_oneshot)
         targetConfig=[0,0,0,0,0,0]
         targetVel=[0,0,0,0,0,0]
         movementData={"id":"movSeq3","type":"mov","targetConfig":targetConfig,"targetVel":targetVel,"maxVel":maxVel,"maxAccel":maxAccel}
         packedMovementData=msgpack.packb(movementData)
-        sim.simxCallScriptFunction(client.id,targetArm1,sim.sim_scripttype_childscript,'legacyRapiMovementDataFunction',[],[],[],packedMovementData,sim.simx_opmode_oneshot)
-        sim.simxCallScriptFunction(client.id,targetArm2,sim.sim_scripttype_childscript,'legacyRapiMovementDataFunction',[],[],[],packedMovementData,sim.simx_opmode_oneshot)
+        sim.simxCallScriptFunction(client.id, targetArm1, sim.sim_scripttype_childscript, 'legacyRapiMovementDataFunction', [], [], [], packedMovementData,
+                                   sim.simx_opmode_oneshot)
+        sim.simxCallScriptFunction(client.id, targetArm2, sim.sim_scripttype_childscript, 'legacyRapiMovementDataFunction', [], [], [], packedMovementData,
+                                   sim.simx_opmode_oneshot)
 
         # Execute second and third movement sequence:
-        sim.simxCallScriptFunction(client.id,targetArm1,sim.sim_scripttype_childscript,'legacyRapiExecuteMovement',[],[],[],'movSeq2',sim.simx_opmode_oneshot)
-        sim.simxCallScriptFunction(client.id,targetArm2,sim.sim_scripttype_childscript,'legacyRapiExecuteMovement',[],[],[],'movSeq2',sim.simx_opmode_oneshot)
-        sim.simxCallScriptFunction(client.id,targetArm1,sim.sim_scripttype_childscript,'legacyRapiExecuteMovement',[],[],[],'movSeq3',sim.simx_opmode_oneshot)
-        sim.simxCallScriptFunction(client.id,targetArm2,sim.sim_scripttype_childscript,'legacyRapiExecuteMovement',[],[],[],'movSeq3',sim.simx_opmode_oneshot)
+        sim.simxCallScriptFunction(client.id, targetArm1, sim.sim_scripttype_childscript, 'legacyRapiExecuteMovement', [], [], [], 'movSeq2',
+                                   sim.simx_opmode_oneshot)
+        sim.simxCallScriptFunction(client.id, targetArm2, sim.sim_scripttype_childscript, 'legacyRapiExecuteMovement', [], [], [], 'movSeq2',
+                                   sim.simx_opmode_oneshot)
+        sim.simxCallScriptFunction(client.id, targetArm1, sim.sim_scripttype_childscript, 'legacyRapiExecuteMovement', [], [], [], 'movSeq3',
+                                   sim.simx_opmode_oneshot)
+        sim.simxCallScriptFunction(client.id, targetArm2, sim.sim_scripttype_childscript, 'legacyRapiExecuteMovement', [], [], [], 'movSeq3',
+                                   sim.simx_opmode_oneshot)
         
         # Wait until above 2 movement sequences finished executing:
         waitForMovementExecuted1('movSeq3')
         waitForMovementExecuted1('movSeq3')
         
-        sim.simxStopSimulation(client.id,sim.simx_opmode_blocking)
-        sim.simxGetStringSignal(client.id,client.stringSignalName1,sim.simx_opmode_discontinue)
-        sim.simxGetStringSignal(client.id,client.stringSignalName2,sim.simx_opmode_discontinue)
+        sim.simxStopSimulation(client.id, sim.simx_opmode_blocking)
+        sim.simxGetStringSignal(client.id, client.stringSignalName1, sim.simx_opmode_discontinue)
+        sim.simxGetStringSignal(client.id, client.stringSignalName2, sim.simx_opmode_discontinue)
         sim.simxGetPingTime(client.id)
 
         # Now close the connection to CoppeliaSim:

@@ -21,13 +21,12 @@ except:
     print ('--------------------------------------------------------------')
     print ('')
 
-import time
 import math
 import msgpack
 
 print ('Program started')
 sim.simxFinish(-1) # just in case, close all opened connections
-clientID=sim.simxStart('127.0.0.1',19997,True,True,5000,5) # Connect to CoppeliaSim
+clientID= sim.simxStart('127.0.0.1', 19997, True, True, 5000, 5) # Connect to CoppeliaSim
 if clientID!=-1:
     print ('Connected to remote API server')
 
@@ -42,14 +41,14 @@ if clientID!=-1:
         global executedMovId
         global stringSignalName
         while executedMovId!=id:
-            retCode,s=sim.simxGetStringSignal(clientID,stringSignalName,sim.simx_opmode_buffer)
-            if retCode==sim.simx_return_ok:
+            retCode,s= sim.simxGetStringSignal(clientID, stringSignalName, sim.simx_opmode_buffer)
+            if retCode== sim.simx_return_ok:
                 if type(s)==bytearray:
                     s=s.decode('ascii') # python2/python3 differences
                 executedMovId=s
 
     # Start streaming stringSignalName string signal:
-    sim.simxGetStringSignal(clientID,stringSignalName,sim.simx_opmode_streaming)
+    sim.simxGetStringSignal(clientID, stringSignalName, sim.simx_opmode_streaming)
 
     # Set-up some movement variables:
     times=[0.000,0.050,0.100,0.150,0.200,0.250,0.300,0.350,0.400,0.450,0.500,0.550,0.600,0.650,0.700,0.750,0.800,0.850,0.900,0.950,1.000,1.050,1.100,1.150,1.200,1.250,1.300,1.350,1.400,1.450,1.500,1.550,1.600,1.650,1.700,1.750,1.800,1.850]
@@ -69,7 +68,7 @@ if clientID!=-1:
     j6=[0.000,0.000,0.002,0.009,0.022,0.042,0.068,0.100,0.139,0.185,0.237,0.296,0.361,0.433,0.511,0.595,0.681,0.768,0.855,0.942,1.027,1.108,1.182,1.249,1.311,1.365,1.414,1.455,1.491,1.519,1.541,1.557,1.566,1.566,1.566,1.566,1.566,1.566,1.566,1.566,1.566,1.567,1.567,1.567,1.567,1.567,1.567,1.567,1.567,1.567,1.567,1.568,1.568,1.568,1.568,1.568,1.568,1.568,1.568,1.568,1.569,1.569,1.569,1.569,1.569,1.569,1.569,1.569,1.569,1.569,1.570,1.570,1.570,1.570,1.570,1.570,1.570,1.570,1.570,1.571,1.571,1.571,1.569,1.561,1.548,1.529,1.503,1.470,1.431,1.388,1.343,1.297,1.251,1.205,1.159,1.113,1.067,1.021,0.975,0.929,0.883,0.837,0.791,0.745,0.699,0.653,0.607,0.561,0.515,0.470,0.424,0.378,0.332,0.286,0.240,0.194,0.149,0.109,0.076,0.048,0.027,0.012,0.004,0.002,0.001,0.000,0.000,0.000]
 
     # Start simulation:
-    sim.simxStartSimulation(clientID,sim.simx_opmode_blocking)
+    sim.simxStartSimulation(clientID, sim.simx_opmode_blocking)
 
     # Wait until ready:
     waitForMovementExecuted('ready') 
@@ -78,16 +77,18 @@ if clientID!=-1:
     targetConfig=[90*math.pi/180,90*math.pi/180,-90*math.pi/180,90*math.pi/180,90*math.pi/180,90*math.pi/180]
     movementData={"id":"movSeq1","type":"pts","times":times,"j1":j1,"j2":j2,"j3":j3,"j4":j4,"j5":j5,"j6":j6}
     packedMovementData=msgpack.packb(movementData)
-    sim.simxCallScriptFunction(clientID,targetArm,sim.sim_scripttype_childscript,'legacyRapiMovementDataFunction',[],[],[],packedMovementData,sim.simx_opmode_oneshot)
+    sim.simxCallScriptFunction(clientID, targetArm, sim.sim_scripttype_childscript, 'legacyRapiMovementDataFunction', [], [], [], packedMovementData,
+                               sim.simx_opmode_oneshot)
 
     # Execute movement sequence:
-    sim.simxCallScriptFunction(clientID,targetArm,sim.sim_scripttype_childscript,'legacyRapiExecuteMovement',[],[],[],'movSeq1',sim.simx_opmode_oneshot)
+    sim.simxCallScriptFunction(clientID, targetArm, sim.sim_scripttype_childscript, 'legacyRapiExecuteMovement', [], [], [], 'movSeq1',
+                               sim.simx_opmode_oneshot)
     
     # Wait until above movement sequence finished executing:
     waitForMovementExecuted('movSeq1')
 
-    sim.simxStopSimulation(clientID,sim.simx_opmode_blocking)
-    sim.simxGetStringSignal(clientID,stringSignalName,sim.simx_opmode_discontinue)
+    sim.simxStopSimulation(clientID, sim.simx_opmode_blocking)
+    sim.simxGetStringSignal(clientID, stringSignalName, sim.simx_opmode_discontinue)
     sim.simxGetPingTime(clientID)
 
     # Now close the connection to CoppeliaSim:

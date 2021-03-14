@@ -5,13 +5,9 @@ Author: Andrew Hundt <ATHundt@gmail.com>
 
 License: Apache v2 https://www.apache.org/licenses/LICENSE-2.0
 """
-import os
-import errno
 import traceback
 
 import numpy as np
-import six  # compatibility between pythonAPI 2 + 3 = six
-import matplotlib.pyplot as plt
 
 try:
     import sim as sim
@@ -29,10 +25,7 @@ except Exception as e:
 import tensorflow as tf
 
 from tensorflow.python.platform import flags
-from tensorflow.python.platform import gfile
-from tensorflow.python.ops import data_flow_ops
 from ply import write_xyz_rgb_as_ply
-from PIL import Image
 
 # progress bars https://github.com/tqdm/tqdm
 # import tqdm without enforcing it as a dependency
@@ -45,13 +38,9 @@ except ImportError:
             return args[0]
         return kwargs.get('iterable', None)
 
-from depth_image_encoding import ClipFloatValues
 from depth_image_encoding import FloatArrayToRgbImage
-from depth_image_encoding import FloatArrayToRawRGB
 from skimage.transform import resize
-from skimage import img_as_ubyte
 from skimage import img_as_uint
-from skimage.color import grey2rgb
 
 try:
     import eigen  # https://github.com/jrl-umi3218/Eigen3ToPython

@@ -28,7 +28,7 @@ class Client:
         self.stepCounter=0
         self.maxForce=100
         sim.simxFinish(-1) # just in case, close all opened connections
-        self.id=sim.simxStart('127.0.0.1',19997,True,True,5000,5) # Connect to CoppeliaSim
+        self.id= sim.simxStart('127.0.0.1', 19997, True, True, 5000, 5) # Connect to CoppeliaSim
         return self
     
     def __exit__(self,*err):
@@ -44,15 +44,15 @@ with Client() as client:
             currentStep=client.stepCounter
             sim.simxSynchronousTrigger(client.id);
             while client.stepCounter==currentStep:
-                retCode,s=sim.simxGetIntegerSignal(client.id,client.intSignalName,sim.simx_opmode_buffer)
-                if retCode==sim.simx_return_ok:
+                retCode,s= sim.simxGetIntegerSignal(client.id, client.intSignalName, sim.simx_opmode_buffer)
+                if retCode== sim.simx_return_ok:
                     client.stepCounter=s
 
         def getCurrentJointAngle():
             retCode=-1
             jointA=0
-            while retCode!=sim.simx_return_ok:
-                retCode,jointA=sim.simxGetJointPosition(client.id,client.jointHandle,sim.simx_opmode_buffer)
+            while retCode!= sim.simx_return_ok:
+                retCode,jointA= sim.simxGetJointPosition(client.id, client.jointHandle, sim.simx_opmode_buffer)
             return jointA
         
         def moveToAngle(targetAngle):
@@ -61,8 +61,8 @@ with Client() as client:
                 stepSimulation()
                 jointAngle=getCurrentJointAngle()
                 vel=computeTargetVelocity(jointAngle,targetAngle)
-                sim.simxSetJointTargetVelocity(client.id,client.jointHandle,vel,sim.simx_opmode_oneshot)
-                sim.simxSetJointMaxForce(client.id,client.jointHandle,client.maxForce,sim.simx_opmode_oneshot)
+                sim.simxSetJointTargetVelocity(client.id, client.jointHandle, vel, sim.simx_opmode_oneshot)
+                sim.simxSetJointMaxForce(client.id, client.jointHandle, client.maxForce, sim.simx_opmode_oneshot)
 
         def computeTargetVelocity(jointAngle,targetAngle):
             dynStepSize=0.005
@@ -85,20 +85,20 @@ with Client() as client:
             return velocity
         
          # Start streaming client.intSignalName integer signal, that signals when a step is finished:
-        sim.simxGetIntegerSignal(client.id,client.intSignalName,sim.simx_opmode_streaming)
+        sim.simxGetIntegerSignal(client.id, client.intSignalName, sim.simx_opmode_streaming)
         
-        res,client.jointHandle=sim.simxGetObjectHandle(client.id,'joint',sim.simx_opmode_blocking)
-        sim.simxSetJointTargetVelocity(client.id,client.jointHandle,360*math.pi/180,sim.simx_opmode_oneshot)
-        sim.simxGetJointPosition(client.id,client.jointHandle,sim.simx_opmode_streaming)
+        res,client.jointHandle= sim.simxGetObjectHandle(client.id, 'joint', sim.simx_opmode_blocking)
+        sim.simxSetJointTargetVelocity(client.id, client.jointHandle, 360 * math.pi / 180, sim.simx_opmode_oneshot)
+        sim.simxGetJointPosition(client.id, client.jointHandle, sim.simx_opmode_streaming)
         
         # enable the synchronous mode on the client:
-        sim.simxSynchronous(client.id,True)
+        sim.simxSynchronous(client.id, True)
         
-        sim.simxStartSimulation(client.id,sim.simx_opmode_oneshot)
+        sim.simxStartSimulation(client.id, sim.simx_opmode_oneshot)
         
         moveToAngle(45*math.pi/180)
         moveToAngle(90*math.pi/180)
         moveToAngle(-89*math.pi/180) #no -90, to avoid passing below
         moveToAngle(0*math.pi/180)
         
-        sim.simxStopSimulation(client.id,sim.simx_opmode_blocking)
+        sim.simxStopSimulation(client.id, sim.simx_opmode_blocking)
