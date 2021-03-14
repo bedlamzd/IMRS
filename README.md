@@ -5,12 +5,13 @@ Reports and code for Imitational Modeling of Robotics Systems course in ITMO
 
 ## PyCharm
 
-Mark `lib` directory as sources directory and enjoy
+Mark `vrepapi` directory as sources directory and enjoy
 
 ## Manual
 
-Add `lib` dir to PYTHONPATH or import with
+Add `vrepapi` dir to PYTHONPATH or import with
 
+## Usage
 ```python
-import lib.vrepapi as sim
+import vrepapi.sim as vrepapi
 ```
