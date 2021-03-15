@@ -1,6 +1,8 @@
 venv/
 .idea/
 
+L3/models/manipulator/
+
 ## Core latex/pdflatex auxiliary files:
 *.aux
 *.lof
