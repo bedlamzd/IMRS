@@ -1,5 +1,5 @@
 from typing import Any, List, NewType, Optional
-from math import pi, isclose, degrees, radians
+from math import pi, isclose
 
 import vrepapi.sim as vrepapi
 
@@ -99,8 +99,12 @@ class L3Controller(VREPClient):
     def distance(self) -> Optional[float]:
         print(f'Reading from proximity sensor...')
 
-        res, ready, (_, _, d), *_ = vrepapi.simxReadProximitySensor(self.client_id, self.__prox_sensor_handle,
-                                                                    vrepapi.simx_opmode_buffer)
+        res, ready, (_, _, d), *_ = \
+            vrepapi.simxReadProximitySensor(
+                    self.client_id,
+                    self.__prox_sensor_handle,
+                    vrepapi.simx_opmode_buffer
+                    )
 
         print(f'Readings:\n'
               f'  response: {res}; ready: {ready}; distance: {d}\n')

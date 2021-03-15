@@ -1,0 +1,50 @@
+%! Author = bedlamzd
+%! Date = 16.02.2021
+
+\usepackage{fontspec}
+\usepackage{polyglossia}
+\defaultfontfeatures{Ligatures=TeX}
+\setdefaultlanguage{russian}
+\setotherlanguage{english}
+\setmainfont{PT Astra Serif}
+\newfontfamily{\latinfont}{PT Astra Serif}
+\newfontfamily{\cyrillicfont}{PT Astra Serif}
+\newfontfamily{\cyrillicfonttt}{FreeMono}
+
+\usepackage{geometry}
+
+\usepackage{mathtools}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsfonts}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{wrapfig}
+\usepackage{subcaption}
+
+\geometry{right=20mm}
+\geometry{left=20mm}
+\geometry{top=20mm}
+\geometry{bottom=20mm}
+
+\usepackage{indentfirst}
+\usepackage[outputdir=out]{minted}
+
+\usepackage{booktabs}
+\usepackage{array}
+
+\renewcommand{\theFancyVerbLine}{\ttfamily{\normalsize\oldstylenums{\arabic{FancyVerbLine}}}}
+\renewcommand{\listingscaption}{Листинг}
+
+\newminted{python}{autogobble, linenos, fontsize=\small}
+\newmintinline{python}{fontsize=\small}
+\newmintedfile{python}{autogobble, linenos, fontsize=\small, breakanywhere, breaklines}
+
+\newminted{lua}{autogobble, linenos, fontsize=\small}
+\newmintinline{lua}{fontsize=\small}
+\newmintedfile{lua}{autogobble, linenos, fontsize=\small, breakanywhere, breaklines}
+
+%\renewcommand{\thesubsection}{\arabic{subsection}}
+
+\graphicspath{{../img/}}
+
