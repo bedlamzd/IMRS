@@ -28,6 +28,10 @@ class VREPClient(metaclass=ABCMeta):
     def _run(self):
         pass
 
+    @staticmethod
+    def response_good(code: int) -> bool:
+        return code in (vrepapi.simx_return_ok, vrepapi.simx_return_novalue_flag)
+
     def run(self):
         with self:
             self._run()
@@ -53,10 +57,6 @@ class L2Controller(VREPClient):
         print('Initiating data streams')
         # initialize stream to get distance
         vrepapi.simxReadProximitySensor(self.client_id, self.sensor, vrepapi.simx_opmode_streaming)
-
-    @staticmethod
-    def response_good(code: int) -> bool:
-        return code in (vrepapi.simx_return_ok, vrepapi.simx_return_novalue_flag)
 
     @property
     def distance(self) -> Optional[float]:

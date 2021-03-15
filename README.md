@@ -15,3 +15,7 @@ Add `vrepapi` dir to PYTHONPATH or import with
 ```python
 import vrepapi.sim as vrepapi
 ```
+
+# Manipulator model
+
+https://grabcad.com/library/robotic-arm-manipulator-fanuc-m-20ib-industrial-robot-1
