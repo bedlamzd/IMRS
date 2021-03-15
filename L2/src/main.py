@@ -47,11 +47,18 @@ class L2Controller(VREPClient):
     def __init_handlers(self):
         # Get handles to the objects
         print('Initiating handlers for objects')
-        _, self.left_holder = vrepapi.simxGetObjectHandle(self.client_id, self.LEFT_HOLDER_NAME,
-                                                          vrepapi.simx_opmode_blocking)
-        _, self.right_holder = vrepapi.simxGetObjectHandle(self.client_id, self.RIGHT_HOLDER_NAME,
-                                                           vrepapi.simx_opmode_blocking)
-        _, self.sensor = vrepapi.simxGetObjectHandle(self.client_id, self.SENSOR_NAME, vrepapi.simx_opmode_blocking)
+        _, self.left_holder = vrepapi.simxGetObjectHandle(
+                self.client_id, self.LEFT_HOLDER_NAME,
+                vrepapi.simx_opmode_blocking
+                )
+        _, self.right_holder = vrepapi.simxGetObjectHandle(
+                self.client_id, self.RIGHT_HOLDER_NAME,
+                vrepapi.simx_opmode_blocking
+                )
+        _, self.sensor = vrepapi.simxGetObjectHandle(
+                self.client_id, self.SENSOR_NAME,
+                vrepapi.simx_opmode_blocking
+                )
 
     def __init_datastreams(self):
         print('Initiating data streams')
@@ -62,8 +69,9 @@ class L2Controller(VREPClient):
     def distance(self) -> Optional[float]:
         print(f'Reading from sensor...')
 
-        res, ready, (_, _, d), *_ = vrepapi.simxReadProximitySensor(self.client_id, self.sensor,
-                                                                    vrepapi.simx_opmode_buffer)
+        res, ready, (_, _, d), *_ = vrepapi.simxReadProximitySensor(
+                self.client_id, self.sensor, vrepapi.simx_opmode_buffer
+                )
 
         print(f'Readings:'
               f'\n  response: {res}; ready: {ready}; distance: {d}\n')
@@ -77,11 +85,15 @@ class L2Controller(VREPClient):
 
     @property
     def sim_time(self) -> float:
-        res, ints, floats, strings, buffer = vrepapi.simxCallScriptFunction(self.client_id, 'Gripper',
-                                                                            vrepapi.sim_scripttype_childscript,
-                                                                            'getSimTime_function', [], [], [],
-                                                                            bytearray(),
-                                                                            vrepapi.simx_opmode_blocking)
+        res, ints, floats, strings, buffer = \
+            vrepapi.simxCallScriptFunction(
+                    self.client_id,
+                    'Gripper',
+                    vrepapi.sim_scripttype_childscript,
+                    'getSimTime_function',
+                    [], [], [], bytearray(),
+                    vrepapi.simx_opmode_blocking
+                    )
         return floats[0] if self.response_good(res) else -1
 
     @property

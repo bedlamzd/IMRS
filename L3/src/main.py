@@ -77,12 +77,15 @@ class L3Controller(VREPClient):
         self.__joint_handles = [
                 vrepapi.simxGetObjectHandle(self.client_id, self.get_joint_name(_), vrepapi.simx_opmode_blocking)[1] for
                 _ in range(0, self.__n_links - 1)]
-        _, self.__tip_handle = vrepapi.simxGetObjectHandle(self.client_id, self.get_tip_name(),
-                                                           vrepapi.simx_opmode_blocking)
-        _, self.__prox_sensor_handle = vrepapi.simxGetObjectHandle(self.client_id, self.get_sensor_name('proximity'),
-                                                                   vrepapi.simx_opmode_blocking)
-        _, self.__vis_sensor_handle = vrepapi.simxGetObjectHandle(self.client_id, self.get_sensor_name('visual'),
-                                                                  vrepapi.simx_opmode_blocking)
+        _, self.__tip_handle = vrepapi.simxGetObjectHandle(
+                self.client_id, self.get_tip_name(), vrepapi.simx_opmode_blocking
+                )
+        _, self.__prox_sensor_handle = vrepapi.simxGetObjectHandle(
+                self.client_id, self.get_sensor_name('proximity'), vrepapi.simx_opmode_blocking
+                )
+        _, self.__vis_sensor_handle = vrepapi.simxGetObjectHandle(
+                self.client_id, self.get_sensor_name('visual'), vrepapi.simx_opmode_blocking
+                )
 
     def __init_datastreams(self):
         vrepapi.simxReadProximitySensor(self.client_id, self.__prox_sensor_handle, vrepapi.simx_opmode_streaming)
