@@ -76,7 +76,7 @@ class L3Controller(VREPClient):
                 for _ in range(self.__n_links)]
         self.__joint_handles = [
                 vrepapi.simxGetObjectHandle(self.client_id, self.get_joint_name(_), vrepapi.simx_opmode_blocking)[1] for
-                _ in range(0, self.__n_links - 1)]
+                _ in range(self.__n_links - 1)]
         _, self.__tip_handle = vrepapi.simxGetObjectHandle(
                 self.client_id, self.get_tip_name(), vrepapi.simx_opmode_blocking
                 )
