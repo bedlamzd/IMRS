@@ -157,6 +157,7 @@ class L4Controller(VREPClient):
         self.__init_datastreams()
 
     def __get_distance(self, sensor_handle: VREPHandle) -> Optional[float]:
+        __max_dist = 2
         print(f'Reading from proximity sensor...')
 
         res, ready, (_, _, d), *_ = \
@@ -169,7 +170,7 @@ class L4Controller(VREPClient):
         print(f'Readings:\n'
               f'  response: {res}; ready: {ready}; distance: {d}\n')
 
-        return d if self.response_good(res) and ready else inf
+        return d if self.response_good(res) and ready else __max_dist
 
     def get_joint_pos(self, joint_handle: VREPHandle):
         _, curr_coord = vrepapi.simxGetJointPosition(self.client_id, joint_handle, vrepapi.simx_opmode_blocking)
