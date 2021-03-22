@@ -158,7 +158,7 @@ class ManipulatorController(ModelController):
         R = .25
         wxy = .7
         wz = 3
-        z = .9 - .1*sin(wz*(t - self.__search_start))
+        z = .9 - .1 * sin(wz * (t - self.__search_start))
         x = R * cos(wxy * (t - self.__search_start))
         y = R * sin(wxy * (t - self.__search_start))
         self.set_target_pose((x, y, z), self.handle)
@@ -187,8 +187,10 @@ class ManipulatorController(ModelController):
         return pos
 
     def get_effector_pos(self):
-        res, pos = vrepapi.simxGetObjectPosition(self.client_id, self.__tip_handle, self.handle, vrepapi.simx_opmode_blocking)
+        res, pos = vrepapi.simxGetObjectPosition(
+                self.client_id, self.__tip_handle, self.handle, vrepapi.simx_opmode_blocking)
         return pos
+
 
 class VehicleController(ModelController):
     _basename = 'vehicle'
@@ -440,7 +442,7 @@ class L5Controller(VREPClient):
             mp = self.manipulator.get_effector_pos()
             tp = self.manipulator.get_target_pose()
 
-            dp = sum((m - t)**2 for m, t in zip(mp, tp))**.5
+            dp = sum((m - t) ** 2 for m, t in zip(mp, tp)) ** .5
             if isclose(dp, 0, abs_tol=3e-2):
                 break
         self.manipulator.set_target_pose((0, 0, .25), handle)
