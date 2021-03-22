@@ -125,14 +125,14 @@ class ManipulatorController(ModelController):
     def clench(self):
         print('Clenching...')
         vrepapi.simxSetJointTargetVelocity(self.client_id, self.__gripper, 0.2, vrepapi.simx_opmode_blocking)
-        vrepapi.simxSetJointForce(self.client_id, self.__gripper, 10, vrepapi.simx_opmode_blocking)
+        vrepapi.simxSetJointForce(self.client_id, self.__gripper, 20, vrepapi.simx_opmode_blocking)
         time.sleep(3)
         print('Done.')
 
     def unclench(self):
         print('Unclenching...')
         vrepapi.simxSetJointTargetVelocity(self.client_id, self.__gripper, -0.2, vrepapi.simx_opmode_blocking)
-        vrepapi.simxSetJointForce(self.client_id, self.__gripper, 10, vrepapi.simx_opmode_blocking)
+        vrepapi.simxSetJointForce(self.client_id, self.__gripper, 20, vrepapi.simx_opmode_blocking)
         time.sleep(3)
         print('Done.')
 
@@ -187,8 +187,8 @@ class ManipulatorController(ModelController):
         return pos
 
     def get_effector_pos(self):
-        res, pos = vrepapi.simxGetObjectPosition(
-                self.client_id, self.__tip_handle, self.handle, vrepapi.simx_opmode_blocking)
+        res, pos = vrepapi.simxGetObjectPosition(self.client_id, self.__tip_handle, self.handle,
+                                                 vrepapi.simx_opmode_blocking)
         return pos
 
 
@@ -206,9 +206,9 @@ class VehicleController(ModelController):
             ]
 
     __max_dir = 45
-    __max_vel = 720
-    __dir_pid = PID(-__max_dir, __max_dir, 10, 1, .001, .001)
-    __vel_pid = PID(-__max_vel, __max_vel, 10, 300, .01, 1)
+    __max_vel = 360
+    __dir_pid = PID(-__max_dir, __max_dir, 1000, 10, 0, 0)
+    __vel_pid = PID(-__max_vel, __max_vel, 10, 10, 0, 0)
 
     @property
     def handle(self):
@@ -284,13 +284,12 @@ class VehicleController(ModelController):
         ld = constrain(ld, min_, max_)
         rd = constrain(rd, min_, max_)
 
-        ld = (max_ - ld) / (ld * max_)
-        rd = (max_ - rd) / (rd * max_)
+        s = (ld + rd) / 2
+        d = (ld - rd) / s * self.__max_dir
 
-        ld = ld * min_ * max_ / (max_ - min_)
-        rd = rd * min_ * max_ / (max_ - min_)
+        print(d, ld, rd)
 
-        return ld - rd
+        return constrain(d, -self.__max_dir, self.__max_dir)
 
     def __estimate_vel(self, ld, rd):
         max_ = 2
@@ -299,38 +298,23 @@ class VehicleController(ModelController):
         ld = constrain(ld, min_, max_)
         rd = constrain(rd, min_, max_)
 
-        ld_v = (ld - min_) / (max_ - min_)
-        rd_v = (rd - min_) / (max_ - min_)
+        vel = (1 - abs(ld - rd) * .5 / (max_ - min_)) * (ld + rd) * .5 / (max_ - min_) * self.__max_vel
 
-        ld_d = (max_ - ld) / (ld * max_)
-        rd_d = (max_ - rd) / (rd * max_)
-
-        ld_d = ld_d * min_ * max_ / (max_ - min_)
-        rd_d = rd_d * min_ * max_ / (max_ - min_)
-
-        goal = min(self.__max_vel * ((ld_v + rd_v) / 2 - abs((ld_d - rd_d) / 2)), self.__max_vel)
-        u = self.__vel_pid(goal, self.__get_wheel_velocity(self.__wheel_handles[-1]))
-
-        # print('Calculating velocity:\n'
-        #       f'\tvelocity: {u}')
-
-        return u
+        return constrain(vel, -self.__max_vel, self.__max_vel)
 
     def __get_wheel_velocity(self, wheel_handle: VREPHandle):
         _, lin, ang = vrepapi.simxGetObjectVelocity(self.client_id, wheel_handle, vrepapi.simx_opmode_buffer)
         return sum([_ * _ for _ in ang[:2]]) ** .5 if VREPClient.response_good(_) else 0
 
-    def move(self, direction: float, distance: float):
-        d_sign = -1 ** (abs(direction) > 90)
+    def move(self, direction: float):
+        ld = self.__get_distance(self.__left_sensor)
+        rd = self.__get_distance(self.__right_sensor)
 
-        direction = self.__dir_pid(0, direction)
-        velocity = self.__vel_pid(0, distance) * self.__vel_pid.sample_time
+        est_vel = self.__estimate_vel(ld, rd)
+        est_dir = self.__estimate_dir(ld, rd)
 
-        direction = constrain(direction, -self.__max_dir, self.__max_dir) * d_sign
-        velocity = constrain(velocity, -self.__max_vel, self.__max_vel) * d_sign
-
-        self.__set_vehicle_dir(direction)
-        self.__set_vehicle_vel(velocity, direction)
+        self.__set_vehicle_dir(est_dir)
+        self.__set_vehicle_vel(est_vel, est_dir)
 
         return direction
 
@@ -349,8 +333,8 @@ class VehicleController(ModelController):
         vrepapi.simxSetJointTargetPosition(self.client_id, joint_handle, pos, vrepapi.simx_opmode_oneshot)
 
     def __set_vehicle_vel(self, vel: float, direction: float = 0):
-        left = 1 - direction / self.__max_dir
-        right = 1 + direction / self.__max_dir
+        left = 1 - direction/self.__max_dir
+        right = 1 + direction/self.__max_dir
         self.__set_joint_vel(self.__drive_joints[0], radians(vel) * left)
         self.__set_joint_vel(self.__drive_joints[1], radians(vel) * right)
         self.__set_joint_vel(self.__drive_joints[2], radians(vel) * left)
@@ -402,7 +386,7 @@ class L5Controller(VREPClient):
 
     def __move_to_target(self):
         direction = self.__target_dir()
-        self.vehicle.move(direction, hypot(*self.__target_pos))
+        self.vehicle.move(direction)
 
     def __get_target_pos(self, handle):
         res, target_pos = vrepapi.simxGetObjectPosition(self.client_id, handle, vehicle.handle,
@@ -430,19 +414,26 @@ class L5Controller(VREPClient):
         pos = self.__get_target_pos(handle)
         pos[2] += .5
         self.manipulator.set_target_pose(pos, vehicle.handle)
+        prev_pos = (0, 0, 0)
         while True:
             mp = self.manipulator.get_effector_pos()
-            tp = self.manipulator.get_target_pose()
-
-            dp = sum((m - t) ** 2 for m, t in zip(mp, tp)) ** .5
+            dp = sum((m - t) ** 2 for m, t in zip(mp, prev_pos)) ** .5
+            prev_pos = mp
             if isclose(dp, 0, abs_tol=3e-2):
                 break
+            time.sleep(.5)
         self.manipulator.set_target_pose((0, 0, .25), handle)
+        time.sleep(2)
         self.manipulator.clench()
+        time.sleep(3)
+        self.manipulator.set_target_pose((0, 0, 1), handle)
         time.sleep(3)
         self.manipulator.set_target_pose((0, 1, 1), self.manipulator.handle)
         time.sleep(3)
-        self.manipulator.set_target_pose(self.__get_target_pos(self.vehicle.trunk), self.vehicle.handle)
+        trunk_pos = self.__get_target_pos(self.vehicle.trunk)
+        self.manipulator.set_target_pose((*trunk_pos[:2], 1), self.vehicle.handle)
+        time.sleep(3)
+        self.manipulator.set_target_pose(trunk_pos, self.vehicle.handle)
         time.sleep(3)
         self.manipulator.unclench()
 

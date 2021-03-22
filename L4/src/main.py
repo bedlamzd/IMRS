@@ -228,8 +228,8 @@ class L4Controller(VREPClient):
         return u
 
     def __set_vehicle_vel(self, vel: float, direction: float = 0):
-        right = constrain(direction / self.__max_dir + 1, 0, 1)
-        left = constrain(-direction / self.__max_dir + 1, 0, 1)
+        left = 1 - direction / self.__max_dir
+        right = 1 + direction / self.__max_dir
         self.__set_joint_vel(self.__drive_joints[0], radians(vel) * left)
         self.__set_joint_vel(self.__drive_joints[1], radians(vel) * right)
         self.__set_joint_vel(self.__drive_joints[2], radians(vel) * left)
