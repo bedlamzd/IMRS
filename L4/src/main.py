@@ -89,8 +89,8 @@ class L4Controller(VREPClient):
 
     __max_dir = 45
     __max_vel = 2000
-    __dir_pid = PID(-__max_dir, __max_dir, 100, 300, .15, 10)
-    __vel_pid = PID(-__max_vel, __max_vel, 100, 3, .001, .01)
+    __dir_pid = PID(-__max_dir, __max_dir, 100, 250, .01, -5)
+    __vel_pid = PID(100, __max_vel, 100, 30, .001, .01)
 
     @classmethod
     def __construct_name(cls, *args) -> str:
@@ -188,8 +188,10 @@ class L4Controller(VREPClient):
         return sum([_ * _ for _ in ang[:2]]) ** .5 if self.response_good(_) else 0
 
     def __move(self):
-        self.__set_vehicle_dir(self.direction)
-        self.__set_vehicle_vel(self.velocity)
+        d = self.direction
+        v = self.velocity
+        self.__set_vehicle_dir(d)
+        self.__set_vehicle_vel(v, d)
 
     def __set_vehicle_dir(self, direction: float):
         for joint in self.__steer_joints:
@@ -225,9 +227,13 @@ class L4Controller(VREPClient):
 
         return u
 
-    def __set_vehicle_vel(self, vel: float):
-        for joint in self.__drive_joints:
-            self.__set_joint_vel(joint, radians(vel))
+    def __set_vehicle_vel(self, vel: float, direction: float = 0):
+        right = constrain(direction / self.__max_dir + 1, 0, 1)
+        left = constrain(-direction / self.__max_dir + 1, 0, 1)
+        self.__set_joint_vel(self.__drive_joints[0], radians(vel) * left)
+        self.__set_joint_vel(self.__drive_joints[1], radians(vel) * right)
+        self.__set_joint_vel(self.__drive_joints[2], radians(vel) * left)
+        self.__set_joint_vel(self.__drive_joints[3], radians(vel) * right)
 
     def __set_joint_vel(self, joint_handle: VREPHandle, vel: float):
         vrepapi.simxSetJointTargetVelocity(self.client_id, joint_handle, vel, vrepapi.simx_opmode_oneshot)
