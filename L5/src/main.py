@@ -54,6 +54,8 @@ class ManipulatorController(ModelController):
     __search_start: float = None
     __init_pos: Tuple[float] = None
 
+    range: float = 1.5
+
     @classmethod
     def get_base_name(cls) -> str:
         return cls.get_link_name(0)
@@ -110,6 +112,30 @@ class ManipulatorController(ModelController):
         _, self.__controller_handle = vrepapi.simxGetObjectHandle(
                 self.client_id, self.get_controller_name(), vrepapi.simx_opmode_blocking)
 
+        _, self.__object = vrepapi.simxGetObjectHandle(
+                self.client_id, 'Object', vrepapi.simx_opmode_blocking)
+
+        _, self.__gripper = vrepapi.simxGetObjectHandle(
+                self.client_id, 'gripper_joint_right', vrepapi.simx_opmode_blocking)
+
+    @property
+    def object_(self):
+        return self.__object
+
+    def clench(self):
+        print('Clenching...')
+        vrepapi.simxSetJointTargetVelocity(self.client_id, self.__gripper, 0.2, vrepapi.simx_opmode_blocking)
+        vrepapi.simxSetJointForce(self.client_id, self.__gripper, 10, vrepapi.simx_opmode_blocking)
+        time.sleep(3)
+        print('Done.')
+
+    def unclench(self):
+        print('Unclenching...')
+        vrepapi.simxSetJointTargetVelocity(self.client_id, self.__gripper, -0.2, vrepapi.simx_opmode_blocking)
+        vrepapi.simxSetJointForce(self.client_id, self.__gripper, 10, vrepapi.simx_opmode_blocking)
+        time.sleep(3)
+        print('Done.')
+
     def __init_datastreams(self):
         vrepapi.simxReadProximitySensor(self.client_id, self.__prox_sensor_handle, vrepapi.simx_opmode_streaming)
         vrepapi.simxReadVisionSensor(self.client_id, self.__vis_sensor_handle, vrepapi.simx_opmode_streaming)
@@ -124,13 +150,15 @@ class ManipulatorController(ModelController):
                     self.client_id, self.__controller_handle, self.handle, vrepapi.simx_opmode_blocking)
             if res == 0:
                 return pos
+
     def __move_next_point(self):
         t = time.time()
         if self.__search_start is None:
             self.__search_start = t
         R = .25
-        wxy = .5
-        z = .9
+        wxy = .7
+        wz = 3
+        z = .9 - .1*sin(wz*(t - self.__search_start))
         x = R * cos(wxy * (t - self.__search_start))
         y = R * sin(wxy * (t - self.__search_start))
         self.set_target_pose((x, y, z), self.handle)
@@ -158,6 +186,9 @@ class ManipulatorController(ModelController):
         res, pos = vrepapi.simxGetObjectPosition(self.client_id, self.__base_handle, -1, vrepapi.simx_opmode_blocking)
         return pos
 
+    def get_effector_pos(self):
+        res, pos = vrepapi.simxGetObjectPosition(self.client_id, self.__tip_handle, self.handle, vrepapi.simx_opmode_blocking)
+        return pos
 
 class VehicleController(ModelController):
     _basename = 'vehicle'
@@ -173,8 +204,8 @@ class VehicleController(ModelController):
             ]
 
     __max_dir = 45
-    __max_vel = 2000
-    __dir_pid = PID(-__max_dir, __max_dir, 10, 300, .001, .01)
+    __max_vel = 720
+    __dir_pid = PID(-__max_dir, __max_dir, 10, 1, .001, .001)
     __vel_pid = PID(-__max_vel, __max_vel, 10, 300, .01, 1)
 
     @property
@@ -229,6 +260,9 @@ class VehicleController(ModelController):
                 )[1]
         self.__right_sensor: VREPHandle = vrepapi.simxGetObjectHandle(
                 self.client_id, self.__get_sensor_name('right'), vrepapi.simx_opmode_blocking
+                )[1]
+        self.trunk: VREPHandle = vrepapi.simxGetObjectHandle(
+                self.client_id, self._construct_name('trunk'), vrepapi.simx_opmode_blocking
                 )[1]
 
     def __init_datastreams(self):
@@ -302,7 +336,7 @@ class VehicleController(ModelController):
         velocity = constrain(velocity, -self.__max_vel, self.__max_vel) * d_sign
 
         self.__set_vehicle_dir(direction)
-        self.__set_vehicle_vel(velocity)
+        self.__set_vehicle_vel(velocity, direction)
 
         return direction
 
@@ -320,9 +354,13 @@ class VehicleController(ModelController):
         # print(f'Setting joint pos: {pos}')
         vrepapi.simxSetJointTargetPosition(self.client_id, joint_handle, pos, vrepapi.simx_opmode_oneshot)
 
-    def __set_vehicle_vel(self, vel: float):
-        for joint in self.__drive_joints:
-            self.__set_joint_vel(joint, radians(vel))
+    def __set_vehicle_vel(self, vel: float, direction: float = 0):
+        right = constrain(direction / self.__max_dir + 1, 0, 1)
+        left = constrain(-direction / self.__max_dir + 1, 0, 1)
+        self.__set_joint_vel(self.__drive_joints[0], radians(vel) * left)
+        self.__set_joint_vel(self.__drive_joints[1], radians(vel) * right)
+        self.__set_joint_vel(self.__drive_joints[2], radians(vel) * left)
+        self.__set_joint_vel(self.__drive_joints[3], radians(vel) * right)
 
     def __set_joint_vel(self, joint_handle: VREPHandle, vel: float):
         vrepapi.simxSetJointTargetVelocity(self.client_id, joint_handle, vel, vrepapi.simx_opmode_oneshot)
@@ -361,7 +399,6 @@ class L5Controller(VREPClient):
     vehicle: VehicleController
 
     __known_handles: List[VREPHandle] = list()
-    __range: float = 1
 
     def __init(self):
         self.manipulator.client_id = self.client_id
@@ -391,16 +428,34 @@ class L5Controller(VREPClient):
 
     def __in_range(self):
         try:
-            return hypot(self.__target_pos[0], self.__target_pos[1]) < self.__range
+            return hypot(self.__target_pos[0], self.__target_pos[1]) < self.manipulator.range
         except AttributeError:
             return False
 
     def __load_object(self, handle: VREPHandle):
-        self.manipulator.set_target_pose((0, 0, .15), handle)
+        pos = self.__get_target_pos(handle)
+        pos[2] += .5
+        self.manipulator.set_target_pose(pos, vehicle.handle)
+        while True:
+            mp = self.manipulator.get_effector_pos()
+            tp = self.manipulator.get_target_pose()
+
+            dp = sum((m - t)**2 for m, t in zip(mp, tp))**.5
+            if isclose(dp, 0, abs_tol=3e-2):
+                break
+        self.manipulator.set_target_pose((0, 0, .25), handle)
+        self.manipulator.clench()
+        time.sleep(3)
+        self.manipulator.set_target_pose((0, 1, 1), self.manipulator.handle)
+        time.sleep(3)
+        self.manipulator.set_target_pose(self.__get_target_pos(self.vehicle.trunk), self.vehicle.handle)
+        time.sleep(3)
+        self.manipulator.unclench()
 
     def _run(self):
         self.__init()
         handle: VREPHandle = self.manipulator.search_object()
+        # handle: VREPHandle = self.manipulator.object_
         while not self.__in_range():
             self.__target_pos = self.__get_target_pos(handle)
             self.__vehicle_pos = self.vehicle.get_position()
