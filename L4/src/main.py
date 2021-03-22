@@ -30,7 +30,7 @@ class PID:
         self.__kd = kd
 
         self.__last_time = 0
-        self.__sample_time = dt
+        self.sample_time = dt
 
         self.__last_err = 0
         self.__int_err = 0
@@ -55,11 +55,11 @@ class PID:
     def __call__(self, goal: float, current: float) -> float:
         cur_time = time.time() * 10e3
 
-        if cur_time - self.__last_time > self.__sample_time:
+        if cur_time - self.__last_time > self.sample_time:
             current = 0 if isnan(current) else current
             err = 0 if isnan(_ := (goal - current)) else _
 
-            self.__int += self.__sample_time * err
+            self.__int += self.sample_time * err
             d_err = err - self.__last_err
 
             self.__output = self.__kp * err + self.__ki * self.__int + self.__kd * d_err
@@ -252,7 +252,7 @@ class L4Controller(VREPClient):
         ld_d = ld_d * min_ * max_ / (max_ - min_)
         rd_d = rd_d * min_ * max_ / (max_ - min_)
 
-        goal = min(self.__max_vel * (1 - abs((ld_d - rd_d) / 2 - (ld_v + rd_v) / 2)), self.__max_vel)
+        goal = min(self.__max_vel * ((ld_v + rd_v) / 2 - abs((ld_d - rd_d) / 2)), self.__max_vel)
         u = self.__vel_pid(goal, self.__get_wheel_velocity(self.__wheel_handles[-1]))
 
         print('Calculating velocity:\n'
